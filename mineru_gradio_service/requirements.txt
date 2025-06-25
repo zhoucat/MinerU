@@ -1,0 +1,13 @@
+# Gradio and UI related
+gradio>=3.50.0  # Specify a recent version for good async support
+gradio-pdf>=0.1.0 # Check for latest version compatible
+loguru>=0.7.0
+
+# MinerUClient dependencies (from src/mineru/api.py and config.py)
+requests>=2.31.0
+aiohttp>=3.9.0
+python-dotenv>=1.0.0
+
+# Other utilities that might be implicitly used or good to have
+# Pillow for image processing if any conversion were to happen client-side (currently not)
+# For now, keep it minimal. Add more if runtime errors show missing deps.

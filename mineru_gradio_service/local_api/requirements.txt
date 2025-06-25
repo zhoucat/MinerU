@@ -1,0 +1,15 @@
+# Dependencies for the MinerU Local API Service
+
+# Server components (from projects/mcp/pyproject.toml)
+fastmcp>=2.5.2
+uvicorn>=0.20.0
+starlette>=0.27.0
+
+# MinerU library's own client-side dependencies (in case server logic uses MinerUClient)
+# Also, config.py uses python-dotenv
+requests>=2.31.0
+aiohttp>=3.9.0
+python-dotenv>=1.0.0
+
+# Logging
+loguru>=0.7.0

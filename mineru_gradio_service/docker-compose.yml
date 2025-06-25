@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  gradio_app:
+    build:
+      context: . # Build context is the project root (mineru_gradio_service)
+      dockerfile: app/Dockerfile
+    container_name: mineru_gradio_ui
+    ports:
+      - "7860:7860"
+    volumes:
+      # Mount the app's temp directory to persist outputs across restarts (optional, good for debugging)
+      # Or, more simply, just map an output directory if APP_TEMP_DIR is not essential for persistence.
+      # The app currently writes to APP_TEMP_DIR/gradio_conversion_runs for its final artifacts.
+      # Let's map a host directory to this for easier access to outputs.
+      - ./gradio_outputs:/opt/app_temp_outputs
+      # The app.py uses APP_TEMP_DIR = Path(tempfile.gettempdir()) / "mineru_gradio_app_..."
+      # To make this persistent and accessible, we should override APP_TEMP_DIR or ensure it writes where we want.
+      # For simplicity, the app should be adjusted to write to a configurable output dir,
+      # or we accept that APP_TEMP_DIR is inside the container's tempfs.
+      # For now, let's assume outputs from Gradio (like zips) are served from APP_TEMP_DIR.
+      # If we want to access these *directly* from the host, we need a volume.
+      # The Gradio File component serves from temp files. The final ZIP is saved in APP_TEMP_DIR.
+      # A volume for APP_TEMP_DIR itself:
+      - ./app_temp_dir_gradio:/tmp/mineru_gradio_app_pid # Match APP_TEMP_DIR structure; PID makes it tricky.
+                                                        # Simpler: app.py uses a fixed path like /outputs.
+                                                        # For now, I'll assume app.py is adjusted or internal temp is fine.
+                                                        # Let's map a generic output volume that the app can choose to use.
+      - ./user_outputs:/opt/app/user_outputs # Example if app saves final zips here
+    environment:
+      # These will be picked up by src.mineru.config.py
+      - USE_LOCAL_API=true
+      - LOCAL_MINERU_API_BASE=http://mineru_local_api:8080
+      # - MINERU_API_KEY=YOUR_API_KEY_IF_NEEDED_BY_LOCAL_API # Usually not for a truly local setup
+      - PYTHONUNBUFFERED=1 # For better logging from Python
+      - GRADIO_SERVER_NAME=0.0.0.0 # Already in app.py, but good practice
+      - GRADIO_SERVER_PORT=7860   # Already in app.py
+      # Ensure APP_TEMP_DIR is set to a path that can be mounted if persistence is desired.
+      # Example: - APP_TEMP_ROOT=/opt/app_persistent_temp
+    depends_on:
+      - mineru_local_api
+    networks:
+      - mineru_network
+
+  mineru_local_api:
+    build:
+      context: .
+      dockerfile: local_api/Dockerfile
+    container_name: mineru_local_api_service
+    ports:
+      - "8080:8080" # Expose for debugging, not strictly needed by Gradio app if on same network
+    environment:
+      # - MINERU_API_KEY=YOUR_API_KEY_IF_LOCAL_MODELS_REQUIRE_IT # Usually not
+      - PYTHONUNBUFFERED=1
+      # Add any other env vars the local API service might need, e.g., model paths if not baked in.
+      # OUTPUT_DIR for the API service (where it might save its own processing artifacts, distinct from Gradio app)
+      - OUTPUT_DIR=/opt/api_service/api_outputs
+    volumes:
+      - ./api_service_outputs:/opt/api_service/api_outputs # To inspect API's own output if any
+    networks:
+      - mineru_network
+
+networks:
+  mineru_network:
+    driver: bridge
