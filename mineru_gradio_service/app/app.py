@@ -380,18 +380,41 @@ if __name__ == '__main__':
             outputs=[ui_markdown_display, ui_markdown_text_raw, ui_zip_output_file, ui_pdf_preview]
         )
 
-        components_to_clear = [ui_file_input, ui_markdown_display, ui_markdown_text_raw, ui_zip_output_file, ui_pdf_preview]
-        def reset_settings_controls_js_action(): # Returns JS to reset specific controls
-             # For Gradio versions that support JS actions for ClearButton this is cleaner.
-             # If not, lambda returning tuple of default values is needed.
-            return False, 0, 'ch' # ocr, max_pages, lang (slider value 0 for "all pages")
+        # Define components to be cleared/reset
+        main_outputs_to_clear = [
+            ui_file_input,
+            ui_markdown_display,
+            ui_markdown_text_raw,
+            ui_zip_output_file,
+            ui_pdf_preview
+        ]
+        settings_controls_to_reset = [
+            ui_ocr_checkbox,
+            ui_max_pages_slider,
+            ui_language_dropdown
+        ]
 
-        # ClearButton can take a list of components.
-        # To reset specific input controls to defaults, we use .then() with a function.
-        ui_clear_button.add(components_to_clear).then(
-            fn=lambda: (False, 0, 'ch'), # ocr_checkbox, max_pages_slider, language_dropdown
-            inputs=[],
-            outputs=[ui_ocr_checkbox, ui_max_pages_slider, ui_language_dropdown]
+        def clear_all_and_reset_settings_fn():
+            """
+            Provides the default values for all components that need resetting.
+            The order of returned values must match the order in `outputs` of the click event.
+            """
+            return (
+                None,    # ui_file_input
+                None,    # ui_markdown_display (or "" if preferred for Markdown component)
+                "",      # ui_markdown_text_raw
+                None,    # ui_zip_output_file
+                None,    # ui_pdf_preview
+                False,   # ui_ocr_checkbox (default: False)
+                0,       # ui_max_pages_slider (default: 0 for "all pages")
+                'ch'     # ui_language_dropdown (default: 'ch')
+            )
+
+        ui_clear_button.click(
+            fn=clear_all_and_reset_settings_fn,
+            inputs=None, # No inputs needed for the clear function
+            outputs=main_outputs_to_clear + settings_controls_to_reset, # List all components to update
+            show_progress="hidden" # Don't show progress for simple clear
         )
 
     logger.info("Starting Gradio demo...")
