@@ -22,8 +22,10 @@ COPY ./src /opt/app/src
 # Make port 7860 available to the world outside this container (Gradio default port)
 EXPOSE 7860
 
-# Define environment variable for Python path if needed, though direct imports should work with this structure.
-# ENV PYTHONPATH "${PYTHONPATH}:/opt/app"
+# Define environment variable for Python path.
+# This ensures that imports like `from src.mineru...` work correctly,
+# as the 'src' directory is located in /opt/app/src.
+ENV PYTHONPATH /opt/app
 
 # Command to run the Gradio application
 # The app.py is now inside /opt/app/app/
