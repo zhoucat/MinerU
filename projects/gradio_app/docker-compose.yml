@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  gradio_app:
+    build:
+      context: ../../ # Build context is the root of the repository
+      dockerfile: ./projects/gradio_app/Dockerfile
+    image: mineru-gradio-app # You can tag the image if you want
+    container_name: mineru_gradio_service
+    ports:
+      - "7860:7860"
+    volumes:
+      # Mount the output directory to persist results on the host
+      - ./output:/app/projects/gradio_app/output
+      # Optional: Mount a directory for models if they are large and you want to manage them outside the image
+      # - /path/to/your/models:/root/.mineru/models # Adjust path as per where mineru stores models
+      # Optional: Mount a directory for input PDFs if you want to easily add new ones
+      # - ./local_pdfs:/app/projects/gradio_app/examples # Example, adjust as needed
+    environment:
+      # Set any environment variables your application might need
+      # Example: MINERU_MODEL_PATH: /root/.mineru/models
+      # Ensure these paths are consistent with how mineru loads models
+      PYTHONUNBUFFERED: 1 # Recommended for Docker logs
+      GRADIO_SERVER_NAME: "0.0.0.0"
+      # Add other environment variables like MINERU_DEVICE_MODE if needed
+      # MINERU_DEVICE_MODE: "cpu" # or "cuda" if you have a GPU-enabled Docker setup
+    # deploy: # Uncomment and configure if you want to use GPUs
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
